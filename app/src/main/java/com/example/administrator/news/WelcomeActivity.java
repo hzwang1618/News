@@ -1,6 +1,7 @@
 package com.example.administrator.news;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -8,52 +9,72 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 
 import com.example.administrator.utils.DensityUtils;
+import com.example.administrator.utils.SharedPreUtils;
+
+import org.xutils.view.annotation.ContentView;
+import org.xutils.view.annotation.Event;
+import org.xutils.view.annotation.ViewInject;
+import org.xutils.x;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@ContentView(R.layout.activity_welcome)
 public class WelcomeActivity extends Activity {
 
+//    private void initView() {
+//        viewpager = (ViewPager) findViewById(R.id.viewpager);
+//        ll = (LinearLayout) findViewById(R.id.ll);
+//    }
+
+    @ViewInject(R.id.viewpager)
     private ViewPager viewpager;
+    @ViewInject(R.id.ll)
     private LinearLayout ll;
     private int pointMoveWidth = 0;
+
+    private List<View> iList = null;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_welcome);
+        x.view().inject(this);
+//        setContentView(R.layout.activity_welcome);
+        // 事件、组件、布局实现IOC的初始化
         // 绑定组件
-        initView();
+//        initView();
         // 初始化数据
         initData();
         Log.i("jxy", this.getResources().getDisplayMetrics().density + "");  // 3.0
 
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // 获取红点移动的距离(两个灰点离左边的距离)
-//        Log.i("jxy","0point:" + ll.getChildAt(0).getLeft() + ",1point:" + ll.getChildAt(1).getLeft());
-    }
 
-    private void initView() {
-        viewpager = (ViewPager) findViewById(R.id.viewpager);
-        ll = (LinearLayout) findViewById(R.id.ll);
+    // @Event(value = R.id.btn_goMain)
+    public void startMainActivity(View view) {
+        // 设置欢迎页面已经显示过一次
+        SharedPreUtils.setBoolean(this, "welcome_show", true);
+        Intent intent = new Intent(this, MainActivity.class);
+        // 标准模式在同一个APP中所有Activity都在同一个栈
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        // 启动主页面
+        startActivity(intent);
     }
 
     private void initData() {
         // 给ViewPager适配Item一般都ImageView
         viewpager.setAdapter(new WelcomePage());
         // 动态给线性 布局添加三个小灰点
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < iList.size(); i++) {
             View view = new View(this);
             view.setBackgroundResource(R.drawable.welcome_point_gray);
             // 代码中所有的数字的单位都是像素 px
@@ -120,11 +141,10 @@ public class WelcomeActivity extends Activity {
     private class WelcomePage extends PagerAdapter {
 
         private int[] ids = null;
-        private List<ImageView> iList = null;
 
         public WelcomePage() {
             ids = new int[]{R.drawable.guide_1, R.drawable.guide_2, R.drawable.guide_3};
-            iList = new ArrayList<ImageView>();
+            iList = new ArrayList<View>();
             // 创建一个ListView<ImageView>来存储图片,
             for (int i = 0; i < ids.length; i++) {
                 ImageView imageView = new ImageView(WelcomeActivity.this);
@@ -132,6 +152,7 @@ public class WelcomeActivity extends Activity {
                 imageView.setBackgroundResource(ids[i]);
                 iList.add(imageView);
             }
+            iList.add(View.inflate(WelcomeActivity.this,R.layout.btn_start,null));
         }
 
         @Override  // 返回集合大小
@@ -141,7 +162,7 @@ public class WelcomeActivity extends Activity {
 
         @Override // 实例化没一个Item,其实就是View
         public Object instantiateItem(ViewGroup container, int position) {
-            ImageView view = (ImageView) iList.get(position);
+            View view = (View) iList.get(position);
             Log.i("jxy", "当前的ViewPager对象:" + container + ",position:" + position + ",ImageView:" + view);
             // 返回之前必须把当前View对象添加到容器中
             container.addView(view); // lv.addView(view); 只能使用适配器
@@ -151,7 +172,7 @@ public class WelcomeActivity extends Activity {
         @Override
         public void destroyItem(ViewGroup container, int position, Object object) {
             Log.i("jxy", "当前销毁的对象:" + object);
-            container.removeView((ImageView) object);
+            container.removeView((View) object);
         }
 
         @Override  //
